@@ -35,7 +35,7 @@ PROMPT_TEMPLATE_TXT_SYS = "prompt_template_system.txt"
 PROMPT_TEMPLATE_TXT_USER = "prompt_template_user.txt"
 
 # 模型设置相关  根据自己的实际情况进行调整
-API_TYPE = "oneapi"  # openai:调用gpt模型；oneapi:调用oneapi方案支持的模型(这里调用通义千问)
+API_TYPE = "ollama"  # openai:调用gpt模型；oneapi:调用oneapi方案支持的模型(这里调用通义千问)；ollama:调用ollama模型
 # openai模型相关配置 根据自己的实际情况进行调整
 OPENAI_API_BASE = "https://api.wlai.vip/v1"
 OPENAI_CHAT_API_KEY = "sk-EhxvNWXkjzZJADfHA1Ac24Dd0f0b42B2B97f3725D3BcA378"
@@ -44,6 +44,10 @@ OPENAI_CHAT_MODEL = "gpt-4o-mini"
 ONEAPI_API_BASE = "http://139.224.72.218:3000/v1"
 ONEAPI_CHAT_API_KEY = "sk-eNbcweTEQV6L5Iw4F0B033219a1149C9Ab77501e690aD218"
 ONEAPI_CHAT_MODEL = "qwen-max"
+# ollama相关配置 根据自己的实际情况进行调整
+OLLAMA_API_BASE = "http://localhost:11434/v1"
+OLLAMA_CHAT_API_KEY = "<KEY>" # 其实访问ollama不需要apikey，这里只是占位
+OLLAMA_CHAT_MODEL = "qwen3:8b"
 
 # API服务设置相关  根据自己的实际情况进行调整
 PORT = 8012  # 服务访问的端口
@@ -127,6 +131,7 @@ async def lifespan(app: FastAPI):
     global model, prompt, chain, API_TYPE, PROMPT_TEMPLATE_TXT_SYS, PROMPT_TEMPLATE_TXT_USER
     global ONEAPI_API_BASE, ONEAPI_CHAT_API_KEY, ONEAPI_CHAT_MODEL
     global OPENAI_API_BASE, OPENAI_CHAT_API_KEY, OPENAI_CHAT_MODEL
+    global OLLAMA_API_BASE, OLLAMA_CHAT_API_KEY, OLLAMA_CHAT_MODEL
     # 根据自己实际情况选择调用model和embedding模型类型
     try:
         logger.info("正在初始化模型、提取prompt模版、定义chain...")
@@ -147,10 +152,18 @@ async def lifespan(app: FastAPI):
                 model=OPENAI_CHAT_MODEL,# 本次使用的模型
                 temperature=0.3,# 发散的程度，一般为0
             )
+        elif API_TYPE == "ollama":
+            # 实例化一个ollama客户端对象
+            model = ChatOpenAI(
+                base_url=OLLAMA_API_BASE, # 请求的API服务地址
+                api_key=OLLAMA_CHAT_API_KEY, # API Key
+                model=OLLAMA_CHAT_MODEL, # 本次使用的模型
+                temperature=0.3,# 发散的程度，一般为0
+            )
 
         # （2）提取prompt模版
-        prompt_template_system = PromptTemplate.from_file(PROMPT_TEMPLATE_TXT_SYS)
-        prompt_template_user = PromptTemplate.from_file(PROMPT_TEMPLATE_TXT_USER)
+        prompt_template_system = PromptTemplate.from_file(PROMPT_TEMPLATE_TXT_SYS, None, "UTF-8")
+        prompt_template_user = PromptTemplate.from_file(PROMPT_TEMPLATE_TXT_USER, None, "UTF-8")
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system",prompt_template_system.template),
