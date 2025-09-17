@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 
-url = "http://localhost:8012/v1/chat/completions"
+url = "http://localhost:11434/v1/chat/completions"
 headers = {"Content-Type": "application/json"}
 
 # 默认非流式输出 True or False
@@ -24,6 +24,7 @@ input_text = "有没有土豪套餐"
 
 # 第一次请求
 data = {
+    "model": "qwen3:8b",
     "messages": [{"role": "user", "content": input_text}],
     "stream": stream_flag,
     "userId":"123",
@@ -61,6 +62,6 @@ if stream_flag:
 else:
     # 发送post请求
     response = requests.post(url, headers=headers, data=json.dumps(data))
-    # logger.info(f"接收到返回的响应原始内容: {response.json()}\n")
+    logger.info(f"接收到返回的响应原始内容: {response.json()}\n")
     content = response.json()['choices'][0]['message']['content']
     logger.info(f"非流式输出，响应内容是: {content}\n")
